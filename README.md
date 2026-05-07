@@ -9,6 +9,6 @@ It contains:
 ## Run
 
 ```bash
-pip install -r interference_app/requirements.txt
+pip install -r requirements.txt
 streamlit run interference_app/ui/streamlit_app.py
 ```
