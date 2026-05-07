@@ -1,0 +1,46 @@
+{
+  "bone_txt": "C:\\Users\\142515\\Downloads\\DrDre\\DrDre\\interference_app\\input_data\\BONE_12_01_EDIT_07.txt",
+  "bone_obj": "C:\\Users\\142515\\Downloads\\DrDre\\DrDre\\interference_app\\input_data\\BONE_12_01_EDIT_07.obj",
+  "fracture_points_n": 11691,
+  "fracture_centroid": [
+    32.824381564826105,
+    11.397503451911104,
+    15.903324175478506
+  ],
+  "fracture_bbox_diag_mm": 65.24330917877276,
+  "fragment_analysis": {
+    "fracture_components": [
+      0
+    ],
+    "bone_labeled_points": 38832,
+    "bone_components": [
+      0,
+      10,
+      12
+    ],
+    "chosen_components": [
+      0
+    ],
+    "coverage_fraction": 0.5,
+    "s_clip_lo": -55.20279410024375,
+    "s_clip_hi": -27.147764217857514,
+    "fragment_tangent_span_mm": 56.11005976477247
+  },
+  "underside_spine_stations": 47,
+  "mesh_vertices": 564,
+  "mesh_faces": 1860,
+  "parameters": {
+    "n_stations": 48,
+    "underside_quantile": 0.22,
+    "outward_offset_mm": 2.5,
+    "fracture_margin_mm": 18.0,
+    "segment_half_length_mm": 6.0,
+    "base_rim_height_mm": 4.0,
+    "fracture_rim_height_mm": 14.0,
+    "inner_floor_drop_mm": 2.0,
+    "coverage_fraction": 0.5,
+    "use_fragment_filter": true,
+    "snap_corners_to_bone": true
+  },
+  "output_obj": "C:\\Users\\142515\\Downloads\\DrDre\\DrDre\\interference_app\\input_data\\fracture_support_shell\\fracture_support_shell.obj"
+}

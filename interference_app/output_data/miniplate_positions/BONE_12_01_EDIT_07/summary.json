@@ -1,0 +1,114 @@
+{
+  "total_candidates": 5,
+  "best_by_combined": {
+    "candidate_id": 1,
+    "rmse_mm": 2.2701039044091984,
+    "green_pct": 33.59375,
+    "yellow_pct": 0.0,
+    "orange_pct": 0.0,
+    "purple_pct": 0.0,
+    "magenta_pct": 0.0
+  },
+  "rankings": {
+    "by_rmse": [
+      3,
+      2,
+      5,
+      4,
+      1
+    ],
+    "by_green_pct": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "by_allowed_fraction": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "by_combined_score": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "all_candidates": [
+    {
+      "rank": 1,
+      "candidate_id": 1,
+      "rmse_mm": 2.2701039044091984,
+      "green_pct": 33.59375,
+      "yellow_pct": 0.0,
+      "orange_pct": 0.0,
+      "purple_pct": 0.0,
+      "magenta_pct": 0.0,
+      "other_pct": 66.40625,
+      "allowed_fraction": 0.3359375,
+      "clearance_mm": 2.2701039044091984,
+      "combined_score": -22.76305657373586
+    },
+    {
+      "rank": 2,
+      "candidate_id": 2,
+      "rmse_mm": 2.0338070901195726,
+      "green_pct": 32.69961977186312,
+      "yellow_pct": 0.0,
+      "orange_pct": 0.0,
+      "purple_pct": 0.0,
+      "magenta_pct": 0.0,
+      "other_pct": 67.30038022813687,
+      "allowed_fraction": 0.3269961977186312,
+      "clearance_mm": 2.0338070901195726,
+      "combined_score": -22.21758668070163
+    },
+    {
+      "rank": 3,
+      "candidate_id": 3,
+      "rmse_mm": 2.024326076663229,
+      "green_pct": 30.393996247654787,
+      "yellow_pct": 0.0,
+      "orange_pct": 0.0,
+      "purple_pct": 0.0,
+      "magenta_pct": 0.0,
+      "other_pct": 69.60600375234522,
+      "allowed_fraction": 0.30393996247654786,
+      "clearance_mm": 2.024326076663229,
+      "combined_score": -20.59789070688293
+    },
+    {
+      "rank": 4,
+      "candidate_id": 4,
+      "rmse_mm": 2.194290810158499,
+      "green_pct": 30.105263157894736,
+      "yellow_pct": 0.0,
+      "orange_pct": 0.0,
+      "purple_pct": 0.0,
+      "magenta_pct": 0.0,
+      "other_pct": 69.89473684210526,
+      "allowed_fraction": 0.30105263157894735,
+      "clearance_mm": 2.194290810158499,
+      "combined_score": -20.348521407251063
+    },
+    {
+      "rank": 5,
+      "candidate_id": 5,
+      "rmse_mm": 2.064833354878156,
+      "green_pct": 22.55639097744361,
+      "yellow_pct": 0.0,
+      "orange_pct": 0.0,
+      "purple_pct": 0.0,
+      "magenta_pct": 0.0,
+      "other_pct": 77.44360902255639,
+      "allowed_fraction": 0.22556390977443608,
+      "clearance_mm": 2.064833354878156,
+      "combined_score": -15.050145908212311
+    }
+  ]
+}

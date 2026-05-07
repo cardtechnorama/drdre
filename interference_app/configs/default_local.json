@@ -1,0 +1,33 @@
+{
+  "runs_root": null,
+  "segmentation": {
+    "cache_root": null,
+    "model": {
+      "backend": "randlanet",
+      "classes": 3,
+      "gpu": -1,
+      "keep_gray": true
+    },
+    "command": null,
+    "timeout_sec": 1800
+  },
+  "reconstruction": {
+    "split_k": 24,
+    "split_min_size": 2000,
+    "split_thr_list": "1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.35,0.3,0.25,0.2,0.18,0.15,0.12,0.1,0.08,0.06,0.05",
+    "icp_iters": 50,
+    "d_min": 0.01,
+    "backoff_steps": 200,
+    "timeout_sec": 3600
+  },
+  "miniplate": {
+    "cache_root": null,
+    "fallback_case": "default"
+  },
+  "fea": {
+    "use_cached_results": true,
+    "plate_glob": "candidate_*_straight.obj",
+    "top_n": 10,
+    "export_excel": true
+  }
+}

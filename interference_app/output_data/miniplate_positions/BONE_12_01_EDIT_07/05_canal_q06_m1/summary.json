@@ -1,0 +1,11 @@
+{
+  "total_candidates": 0,
+  "best_by_combined": {},
+  "rankings": {
+    "by_rmse": [],
+    "by_green_pct": [],
+    "by_allowed_fraction": [],
+    "by_combined_score": []
+  },
+  "all_candidates": []
+}
