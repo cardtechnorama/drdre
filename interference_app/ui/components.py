@@ -19,20 +19,26 @@ from ..config import AppConfig, STAGE_ORDER
 from ..manifests import build_run_request
 from ..pv_streamlit import (
     pyvista_stack_available,
+    streamlit_show_bone_and_aimers,
     streamlit_show_bone_and_plate,
     streamlit_show_colored_bone,
 )
 from ..schemas import CaseInputs, RunSummary, StageResult, StageStatus
 from ..visualizations import (
+    AIMER_A_COLOR,
+    AIMER_B_COLOR,
     BONE_COLOR,
+    Mesh,
     PLATE_PALETTE,
     combined_figure,
+    combined_figure_bone_and_aimers,
     combined_figure_colored_bone_mesh_txt,
     combined_figure_colored_bone_txt,
     load_obj_mesh,
     load_point_cloud_json,
     mesh_figure,
     mesh_figure_colored_by_txt,
+    mesh_negate_x,
     point_cloud_figure,
     transfer_txt_colors_to_mesh_vertices,
     _hex_to_rgb,
@@ -129,6 +135,61 @@ def _default_fea_batch_root() -> Path | None:
     if not raw:
         return None
     return Path(raw).expanduser().resolve()
+
+
+def _default_aimers_root() -> Path:
+    raw = os.environ.get("INTERFERENCE_VIEWER_AIMERS_ROOT", "").strip()
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return (_APP_ROOT / "output_data" / "aimers").resolve()
+
+
+def _resolve_case_aimer_objs(case_id: str) -> tuple[Path | None, Path | None]:
+    """Per-case aimers: ``<aimers_root>/<case_id>/aimer_A.obj`` and ``aimer_B.obj``."""
+    case_dir = _default_aimers_root() / case_id
+    a = case_dir / "aimer_A.obj"
+    b = case_dir / "aimer_B.obj"
+    if a.is_file() and b.is_file():
+        return a.resolve(), b.resolve()
+    return None, None
+
+
+@st.cache_data(show_spinner=False)
+def _load_aimer_meshes_cached(aimer_a_str: str, aimer_b_str: str) -> tuple[Mesh, Mesh]:
+    return load_obj_mesh(Path(aimer_a_str)), load_obj_mesh(Path(aimer_b_str))
+
+
+def _render_aimer_prototype_overlay(
+    selected_case: str,
+    bone_txt: Path,
+    aimer_a_path: Path,
+    aimer_b_path: Path,
+) -> None:
+    """Bone colors from input TXT points (per-point Color), plus aimer meshes."""
+    pc_bone = load_point_cloud_json(bone_txt, max_points=None)
+    if pc_bone.xyz.shape[0] == 0:
+        st.caption(f"Input TXT has no points: `{bone_txt}`")
+        return
+
+    mesh_a, mesh_b = _load_aimer_meshes_cached(str(aimer_a_path), str(aimer_b_path))
+    mesh_a = mesh_negate_x(mesh_a)
+    mesh_b = mesh_negate_x(mesh_b)
+    title = f"{selected_case}: input bone + surgical aimers"
+
+    fig = combined_figure_colored_bone_txt(
+        pc_bone,
+        {1: mesh_a, 2: mesh_b},
+        [1, 2],
+        title=title,
+        bone_path=bone_txt,
+        bone_marker_size=1.15,
+        bone_opacity=0.5,
+        plate_opacity=0.92,
+        max_bone_points=None,
+        plate_names={1: "aimer A", 2: "aimer B"},
+        plate_colors={1: AIMER_A_COLOR, 2: AIMER_B_COLOR},
+    )
+    st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
 def _discover_fea_results_paths(batch_root: Path) -> list[tuple[str, Path]]:
@@ -1350,6 +1411,27 @@ def render_precomputed_viewer_page() -> None:
                         st.info(
                             "`best_by_combined.candidate_id` is not available in summary.json."
                         )
+
+    aimer_a_path, aimer_b_path = _resolve_case_aimer_objs(selected_case)
+    has_input_bone = bool(
+        input_txt and input_txt.is_file() and input_obj and input_obj.is_file()
+    )
+    if aimer_a_path is not None and aimer_b_path is not None and has_input_bone:
+        st.markdown("### 6) Aimer prototype")
+        c6_txt, c6_viz = _viewer_section_columns(6)
+        with c6_txt:
+            st.markdown(
+                "Original **input bone** from `input_data/<case>.txt` (per-point colors), "
+                "with aimer shells **A** (red) and **B** (blue). "
+                f"Shown for case `{selected_case}` when aimers are uploaded."
+            )
+        with c6_viz:
+            _render_aimer_prototype_overlay(
+                selected_case,
+                input_txt,
+                aimer_a_path,
+                aimer_b_path,
+            )
 
 
 __all__ = [

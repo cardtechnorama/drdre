@@ -178,10 +178,100 @@ def streamlit_show_bone_and_plate(
     return True
 
 
+def streamlit_show_bone_and_aimers(
+    bone: Mesh,
+    bone_vertex_rgb: np.ndarray | None,
+    aimer_a: Mesh,
+    aimer_b: Mesh,
+    *,
+    aimer_a_color_hex: str,
+    aimer_b_color_hex: str,
+    streamlit_key: str,
+    bone_path: Path | None = None,
+    aimer_a_path: Path | None = None,
+    aimer_b_path: Path | None = None,
+    laplacian_iters: int = 0,
+    max_bone_faces: int | None = None,
+    max_aimer_faces: int | None = None,
+) -> bool:
+    try:
+        import pyvista as pv
+        from stpyvista import stpyvista
+    except ImportError:
+        return False
+
+    if bone.faces.shape[0] == 0:
+        return False
+
+    try:
+        seed_b = _seed_from_path(bone_path) if bone_path is not None else 0
+        surf_b = _mesh_to_polydata(bone, max_faces=max_bone_faces, seed=seed_b)
+        if laplacian_iters > 0:
+            surf_b = surf_b.smooth(
+                n_iter=int(laplacian_iters),
+                relaxation_factor=0.08,
+                feature_smoothing=False,
+                boundary_smoothing=False,
+            )
+        plotter = pv.Plotter(window_size=(920, 560))
+        plotter.set_background("white")
+        if bone_vertex_rgb is not None:
+            rgb = np.asarray(bone_vertex_rgb, dtype=np.uint8)
+            if rgb.shape[0] == surf_b.n_points:
+                _polydata_set_point_rgb(surf_b, rgb)
+                plotter.add_mesh(
+                    surf_b,
+                    scalars="point_rgb",
+                    rgb=True,
+                    smooth_shading=True,
+                    interpolate_before_map=True,
+                    show_edges=False,
+                    opacity=0.95,
+                )
+            else:
+                plotter.add_mesh(
+                    surf_b,
+                    color="#b0b0b0",
+                    smooth_shading=True,
+                    show_edges=False,
+                    opacity=0.88,
+                )
+        else:
+            plotter.add_mesh(
+                surf_b,
+                color="#b0b0b0",
+                smooth_shading=True,
+                show_edges=False,
+                opacity=0.88,
+            )
+
+        for mesh, color, path, offset in (
+            (aimer_a, aimer_a_color_hex, aimer_a_path, 7),
+            (aimer_b, aimer_b_color_hex, aimer_b_path, 13),
+        ):
+            if mesh.vertices.size == 0:
+                continue
+            seed = _seed_from_path(path) if path is not None else seed_b + offset
+            surf = _mesh_to_polydata(mesh, max_faces=max_aimer_faces, seed=seed)
+            plotter.add_mesh(
+                surf,
+                color=color,
+                smooth_shading=True,
+                show_edges=False,
+                opacity=0.92,
+            )
+        plotter.reset_camera()
+        stpyvista(plotter, key=streamlit_key)
+    except Exception:
+        return False
+    return True
+
+
 __all__ = [
     "PYVISTA_MAX_BONE_FACES",
     "PYVISTA_MAX_PLATE_FACES",
     "pyvista_stack_available",
+    "streamlit_show_bone_and_aimers",
     "streamlit_show_bone_and_plate",
     "streamlit_show_colored_bone",
 ]

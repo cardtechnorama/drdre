@@ -78,6 +78,29 @@ class Mesh:
     faces: np.ndarray
 
 
+def negate_x_points(xyz: np.ndarray) -> np.ndarray:
+    """Flip X (TXT JSON frame vs OBJ export frame used across the pipeline)."""
+    out = np.asarray(xyz, dtype=np.float32).copy()
+    if out.size:
+        out[..., 0] = -out[..., 0]
+    return out
+
+
+def mesh_negate_x(mesh: Mesh) -> Mesh:
+    return Mesh(
+        vertices=negate_x_points(mesh.vertices),
+        faces=np.asarray(mesh.faces, dtype=np.int64).copy(),
+    )
+
+
+def point_cloud_negate_x(pc: PointCloud) -> PointCloud:
+    return PointCloud(
+        xyz=negate_x_points(pc.xyz),
+        labels=pc.labels,
+        txt_vertex_ids=pc.txt_vertex_ids,
+    )
+
+
 def _seed_from_path(path: Path) -> int:
     digest = hashlib.sha1(str(path.resolve()).encode("utf-8")).digest()
     return int.from_bytes(digest[:4], "little", signed=False)
@@ -645,9 +668,11 @@ def combined_figure_colored_bone_txt(
     bone_opacity: float = 0.42,
     plate_opacity: float = 0.95,
     highlight_ids: Iterable[int] | None = None,
-    max_bone_points: int = MAX_POINTS_DEFAULT,
+    max_bone_points: int | None = MAX_POINTS_DEFAULT,
+    plate_names: dict[int, str] | None = None,
+    plate_colors: dict[int, str] | None = None,
 ) -> go.Figure:
-    """Bone from classified reconstruction TXT (per-point colors); plates as mesh/points."""
+    """Bone from classified TXT (per-point ``Color`` labels); optional mesh overlays."""
     fig = go.Figure()
     seed = _seed_from_path(bone_path) if bone_path is not None else 0
     xyz = bone_pc.xyz
@@ -655,7 +680,7 @@ def combined_figure_colored_bone_txt(
     if xyz.shape[0] == 0:
         _apply_scene_layout(fig, title)
         return fig
-    if xyz.shape[0] > max_bone_points:
+    if max_bone_points is not None and xyz.shape[0] > max_bone_points:
         idx = _subsample_indices(xyz.shape[0], max_bone_points, seed)
         xyz = xyz[idx]
         labels = labels[idx]
@@ -691,8 +716,8 @@ def combined_figure_colored_bone_txt(
         m = plate_meshes.get(cid)
         if m is None or m.vertices.size == 0:
             continue
-        color = _PLATE_PALETTE[i % len(_PLATE_PALETTE)]
-        name = f"candidate_{cid:04d}"
+        color = (plate_colors or {}).get(cid, _PLATE_PALETTE[i % len(_PLATE_PALETTE)])
+        name = (plate_names or {}).get(cid, f"candidate_{cid:04d}")
         if cid in hl:
             name = f"[top] {name}"
         if m.faces.shape[0] > 0:
@@ -792,6 +817,96 @@ def combined_figure_colored_bone_mesh_txt(
     return fig
 
 
+AIMER_A_COLOR = "#e74c3c"
+AIMER_B_COLOR = "#1f77b4"
+
+
+def combined_figure_bone_and_aimers(
+    bone_mesh: Mesh,
+    aimer_a: Mesh,
+    aimer_b: Mesh,
+    *,
+    title: str,
+    bone_vertex_rgb: np.ndarray | None = None,
+    bone_path: Path | None = None,
+    bone_opacity: float = 0.82,
+    aimer_opacity: float = 0.92,
+    max_bone_faces: int | None = None,
+) -> go.Figure:
+    """Input bone with surgical aimer shells A and B."""
+    fig = go.Figure()
+    seed = _seed_from_path(bone_path) if bone_path is not None else 0
+    nf_total = int(bone_mesh.faces.shape[0])
+    if nf_total == 0:
+        verts = np.asarray(bone_mesh.vertices, dtype=np.float32)
+        if bone_vertex_rgb is not None and bone_vertex_rgb.shape[0] == verts.shape[0]:
+            fig.add_trace(
+                _mesh_as_points_colored_trace(
+                    verts,
+                    bone_vertex_rgb,
+                    name="bone",
+                    marker_size=1.1,
+                    seed=seed,
+                    max_points=MAX_MESH_POINTS_DEFAULT,
+                    mesh_path=bone_path,
+                )
+            )
+        else:
+            fig.add_trace(
+                _mesh_as_points_trace(
+                    verts,
+                    name="bone",
+                    color=BONE_COLOR,
+                    marker_size=1.1,
+                    seed=seed,
+                    max_points=MAX_MESH_POINTS_DEFAULT,
+                )
+            )
+    else:
+        display_bone = _maybe_cap_mesh_faces(bone_mesh, max_bone_faces, seed)
+        if bone_vertex_rgb is not None and bone_vertex_rgb.shape[0] == bone_mesh.vertices.shape[0]:
+            fig.add_trace(
+                _mesh3d_vertexcolor_trace(
+                    display_bone,
+                    bone_vertex_rgb,
+                    name="bone (segmentation)",
+                    opacity=bone_opacity,
+                )
+            )
+        else:
+            fig.add_trace(
+                _mesh3d_trace(
+                    display_bone,
+                    name="bone (segmentation)",
+                    color=BONE_COLOR,
+                    opacity=bone_opacity,
+                )
+            )
+    for label, mesh, color in (
+        ("aimer A", aimer_a, AIMER_A_COLOR),
+        ("aimer B", aimer_b, AIMER_B_COLOR),
+    ):
+        if mesh.vertices.size == 0:
+            continue
+        if mesh.faces.shape[0] > 0:
+            fig.add_trace(
+                _mesh3d_trace(mesh, name=label, color=color, opacity=aimer_opacity)
+            )
+        else:
+            fig.add_trace(
+                _mesh_as_points_trace(
+                    mesh.vertices,
+                    name=label,
+                    color=color,
+                    marker_size=2.6,
+                    seed=seed + (1 if label.endswith("A") else 2),
+                    max_points=MAX_MESH_POINTS_DEFAULT,
+                )
+            )
+    _apply_scene_layout(fig, title)
+    return fig
+
+
 def save_figure_html(fig: go.Figure, path: Path) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -806,10 +921,16 @@ __all__ = [
     "MAX_MESH_POINTS_DEFAULT",
     "MAX_POINTS_DEFAULT",
     "Mesh",
+    "mesh_negate_x",
+    "negate_x_points",
+    "point_cloud_negate_x",
     "PLATE_PALETTE",
     "PointCloud",
     "candidates_overview_figure",
+    "AIMER_A_COLOR",
+    "AIMER_B_COLOR",
     "combined_figure",
+    "combined_figure_bone_and_aimers",
     "combined_figure_colored_bone_mesh_txt",
     "combined_figure_colored_bone_txt",
     "load_obj_mesh",
